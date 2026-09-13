@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sound Master 💨🗣️</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+
+    <!-- 1. מסך הבית -->
+    <div id="screen-main" class="screen">
+      <h1 class="logo">Sound Master 👑</h1>
+      <p class="subtitle">השלם את הקטלוגים או תפציץ בחידון הטריוויה!</p>
+
+      <div class="mode-cards">
+        <button class="mode-card fart-theme" onclick="openCatalog('fart')">
+          <span class="icon">💨</span>
+          <h2>Fart Game</h2>
+          <p>קטלוג פלוצים</p>
+        </button>
+
+        <button class="mode-card burp-theme" onclick="openCatalog('burp')">
+          <span class="icon">🗣️</span>
+          <h2>Burp Game</h2>
+          <p>קטלוג גרעפסים</p>
+        </button>
+      </div>
+
+      <!-- פינת טריוויה חדשה -->
+      <div class="trivia-section">
+        <h3>🧠 חידון הטריוויה הגדול</h3>
+        <p>15 שאלות, טיימר לוחץ וניקוד בסגנון Kahoot!</p>
+        <div class="trivia-buttons">
+          <button class="trivia-launch-btn fart-quiz-btn" onclick="startTrivia('fart')">💨 טריוויה פלוצים</button>
+          <button class="trivia-launch-btn burp-quiz-btn" onclick="startTrivia('burp')">🗣️ טריוויה גרעפסים</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. מסך קטלוג שלבים -->
+    <div id="screen-catalog" class="screen hidden">
+      <div class="header-bar">
+        <button class="back-btn" onclick="showScreen('screen-main')">⬅️ חזרה</button>
+        <h2 id="catalog-title">קטלוג</h2>
+      </div>
+      
+      <div id="levels-list" class="levels-grid"></div>
+    </div>
+
+    <!-- 3. מסך אתגר (הקלטה וחיקוי) -->
+    <div id="screen-challenge" class="screen hidden">
+      <div class="header-bar">
+        <button class="back-btn" onclick="showScreen('screen-catalog')">⬅️ לקטלוג</button>
+        <h2 id="challenge-title">שם השלב</h2>
+      </div>
+
+      <div class="challenge-box">
+        <p id="challenge-desc">שמע את המקור ונסה לחקות אותו בדיוק!</p>
+
+        <button class="action-btn play-btn" onclick="playTargetSound()">
+          🔊 השמע סאונד מקורי
+        </button>
+
+        <div class="record-area">
+          <button id="record-btn" class="record-btn" onclick="toggleRecording()">
+            🎙️ התחל הקלטה
+          </button>
+          <p id="record-status">לחץ כדי להקליט</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. מסך משחק הטריוויה -->
+    <div id="screen-trivia" class="screen hidden">
+      <div class="trivia-header">
+        <span id="quiz-progress">שאלה 1/15</span>
+        <div class="timer-badge">⏳ <span id="quiz-timer">15</span>s</div>
+        <div class="score-badge">🏆 <span id="quiz-score">0</span></div>
+      </div>
+
+      <div class="question-card">
+        <h3 id="quiz-question-text">טוען שאלה...</h3>
+        <div id="quiz-options-container" class="options-grid"></div>
+      </div>
+    </div>
+
+    <!-- 5. מסך תוצאות טריוויה -->
+    <div id="screen-trivia-result" class="screen hidden">
+      <div class="result-card">
+        <h2>🎉 סיימת את החידון!</h2>
+        <div class="score-circle">
+          <span id="final-trivia-score">0</span>
+        </div>
+        <p id="high-score-text">שיא אישי: 0</p>
+        <p id="trivia-feedback-text">משוב...</p>
+
+        <div class="result-actions">
+          <button class="action-btn" onclick="restartCurrentTrivia()">🔄 נסה שוב</button>
+          <button class="action-btn success-btn" onclick="showScreen('screen-main')">🏠 לתפריט הראשי</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- מסך טעינה -->
+    <div id="overlay-loading" class="overlay hidden">
+      <div class="loading-card">
+        <div class="spinner"></div>
+        <p id="funny-loading-text">מנתח תדרים...</p>
+      </div>
+    </div>
+
+    <!-- מסך תוצאת הקלטה -->
+    <div id="screen-result" class="screen hidden">
+      <div class="result-card">
+        <h2 id="result-badge">ציון להתקדמות: 75%</h2>
+        <div class="score-circle">
+          <span id="score-number">0</span>%
+        </div>
+        
+        <p id="result-feedback">משוב...</p>
+
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span>⏱️ אורך הקלטה</span>
+            <strong id="stat-time">0s</strong>
+          </div>
+          <div class="stat-item">
+            <span>🔊 עוצמה</span>
+            <strong id="stat-vol">0</strong>
+          </div>
+        </div>
+
+        <div class="result-actions">
+          <button class="action-btn" onclick="retryChallenge()">🔄 נסה שוב</button>
+          <button class="action-btn success-btn" onclick="showScreen('screen-catalog')">
+            📋 חזרה לקטלוג
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
