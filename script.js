@@ -1,3 +1,18 @@
+// === הגדרת FIREBASE (הפרויקט שלך) ===
+const firebaseConfig = {
+  apiKey: "AIzaSyDSurjpzWCtjLMT28V8nIiSvJ-lkVHNyMA",
+  authDomain: "sound-match-game.firebaseapp.com",
+  projectId: "sound-match-game",
+  storageBucket: "sound-match-game.firebasestorage.app",
+  messagingSenderId: "532952838265",
+  appId: "1:532952838265:web:7bcd2d46a811c1b089a4a8",
+  databaseURL: "https://sound-match-game-default-rtdb.firebaseio.com"
+};
+
+if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
+
 // === מאגר השלבים לקטלוג ===
 const gameData = {
   fart: [
@@ -13,6 +28,18 @@ const gameData = {
     { id: 4, name: "BOSS: הפיצוץ המלכותי", file: "sounds/explosive-burp.mp3", duration: 2.0, targetVol: 95 }
   ]
 };
+
+// === מאגר 8 סאונדים למשחק הזיכרון (16 קלפים) ===
+const memorySoundPool = [
+  { id: 'f1', file: 'sounds/basic-fart.mp3', icon: '💨' },
+  { id: 'f2', file: 'sounds/very-wet-fart.mp3', icon: '💦' },
+  { id: 'f3', file: 'sounds/proud-long-fart.mp3', icon: '👑' },
+  { id: 'f4', file: 'sounds/silent-fart.mp3', icon: '🤫' },
+  { id: 'b1', file: 'sounds/basic-burp.mp3', icon: '🗣️' },
+  { id: 'b2', file: 'sounds/long-burp.mp3', icon: '📢' },
+  { id: 'b3', file: 'sounds/explosive-burp.mp3', icon: '💥' },
+  { id: 'b4', file: 'sounds/downgrade-burp.mp3', icon: '🌊' }
+];
 
 // === מאגר שאלות הטריוויה (15 שאלות לכל קטגוריה) ===
 const triviaQuestions = {
@@ -61,7 +88,7 @@ const funnyLoadingTexts = [
   "בודק מול מעבדות בגרמניה..."
 ];
 
-// מצב המשחק
+// מצב המשחק הכללי
 let currentCategory = 'fart';
 let currentLevel = null;
 let progress = JSON.parse(localStorage.getItem('sound_master_progress')) || { fart: [1], burp: [1] };
@@ -81,6 +108,13 @@ let audioContext = null;
 let analyser = null;
 let volumeSamples = [];
 let recordStartTime = 0;
+
+// משתני משחק זיכרון מולטיפלייר
+let currentRoomId = null;
+let myPlayerId = null; // 'p1' או 'p2'
+let roomRef = null;
+let roomListener = null;
+let isFlipping = false;
 
 function showScreen(screenId) {
   document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
@@ -116,7 +150,6 @@ function loadQuestion() {
   const container = document.getElementById('quiz-options-container');
   container.innerHTML = '';
 
-  // 1. יצירת מערך אובייקטים המקשר בין התשובה לערך המקורי שלה
   let optionsList = qData.options.map((optText, originalIndex) => {
     return {
       text: optText,
@@ -124,31 +157,28 @@ function loadQuestion() {
     };
   });
 
-  // 2. ערבוב רנדומלי של התשובות (Fisher-Yates Shuffle)
   for (let i = optionsList.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [optionsList[i], optionsList[j]] = [optionsList[j], optionsList[i]];
   }
 
-  // 3. רינדור הכפתורים למסך עם הזיהוי החדש
-  optionsList.forEach((optObj, newIndex) => {
+  optionsList.forEach((optObj) => {
     const btn = document.createElement('button');
     btn.className = 'option-btn';
     btn.textContent = optObj.text;
-    btn.dataset.isCorrect = optObj.isCorrect; // שומר אם זו התשובה הנכונה
+    btn.dataset.isCorrect = optObj.isCorrect;
     
     btn.onclick = () => handleAnswerShuffled(optObj.isCorrect, btn);
     container.appendChild(btn);
   });
 
-  // טיימר לשאלה
   triviaTimer = setInterval(() => {
     timeLeft--;
     document.getElementById('quiz-timer').textContent = timeLeft;
 
     if (timeLeft <= 0) {
       clearInterval(triviaTimer);
-      handleAnswerShuffled(false, null); // נגמר הזמן
+      handleAnswerShuffled(false, null);
     }
   }, 1000);
 }
@@ -160,7 +190,6 @@ function handleAnswerShuffled(isCorrect, btnElement) {
 
   const allBtns = document.querySelectorAll('.option-btn');
 
-  // סימון התשובה הנכונה בירוק בלוח
   allBtns.forEach(btn => {
     if (btn.dataset.isCorrect === "true") {
       btn.classList.add('correct');
@@ -168,7 +197,6 @@ function handleAnswerShuffled(isCorrect, btnElement) {
   });
 
   if (isCorrect) {
-    // חישוב ניקוד מבוסס זמן (עד 1,000 נקודות לשאלה)
     const pointsGained = 400 + (timeLeft * 40); 
     triviaScore += pointsGained;
     document.getElementById('quiz-score').textContent = triviaScore;
@@ -190,7 +218,6 @@ function finishTrivia() {
   showScreen('screen-trivia-result');
   document.getElementById('final-trivia-score').textContent = triviaScore;
 
-  // בדיקת שיא אישי
   if (triviaScore > (highScores[currentCategory] || 0)) {
     highScores[currentCategory] = triviaScore;
     localStorage.setItem('sound_master_trivia_highscores', JSON.stringify(highScores));
@@ -204,7 +231,7 @@ function finishTrivia() {
   else feedback.textContent = "😅 יש עוד מה ללמוד... נסה שוב!";
 }
 
-// === לוגיקת קטלוג והקלטות (נשארה כפי שהייתה) ===
+// === לוגיקת קטלוג והקלטות ===
 function openCatalog(category) {
   currentCategory = category;
   document.getElementById('catalog-title').textContent = category === 'fart' ? 'קטלוג פלוצים 💨' : 'קטלוג גרעפסים 🗣️';
@@ -360,4 +387,185 @@ function showResult(score, duration, avgVol) {
 
 function retryChallenge() {
   showScreen('screen-challenge');
+}
+
+// === לוגיקת משחק הזיכרון ONLINE (FIREBASE) ===
+function createMemoryRoom() {
+  if (typeof firebase === 'undefined') {
+    alert("שגיאת טעינה של Firebase");
+    return;
+  }
+  const db = firebase.database();
+  const roomId = Math.floor(1000 + Math.random() * 9000).toString();
+  myPlayerId = 'p1';
+  currentRoomId = roomId;
+
+  let deck = [...memorySoundPool, ...memorySoundPool];
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+
+  const initialDeck = deck.map((item, index) => ({
+    id: index,
+    soundId: item.id,
+    file: item.file,
+    icon: item.icon,
+    flipped: false,
+    matched: false
+  }));
+
+  const initialRoomData = {
+    deck: initialDeck,
+    currentTurn: 'p1',
+    p1Score: 0,
+    p2Score: 0,
+    p2Joined: false,
+    flippedCards: []
+  };
+
+  roomRef = db.ref('rooms/' + roomId);
+  roomRef.set(initialRoomData).then(() => {
+    listenToRoom(roomId);
+    showScreen('screen-memory');
+  });
+}
+
+function joinMemoryRoom() {
+  const inputCode = document.getElementById('room-code-input').value.trim();
+  if (inputCode.length !== 4) {
+    alert("נא להזין קוד חדר תקין של 4 ספרות");
+    return;
+  }
+
+  if (typeof firebase === 'undefined') return;
+  const db = firebase.database();
+
+  myPlayerId = 'p2';
+  currentRoomId = inputCode;
+  roomRef = db.ref('rooms/' + inputCode);
+
+  roomRef.once('value').then(snapshot => {
+    if (!snapshot.exists()) {
+      alert("החדר לא נמצא! ודא שהקוד נכון.");
+      return;
+    }
+    roomRef.update({ p2Joined: true });
+    listenToRoom(inputCode);
+    showScreen('screen-memory');
+  });
+}
+
+function listenToRoom(roomId) {
+  document.getElementById('display-room-code').textContent = roomId;
+  if (roomListener && roomRef) roomRef.off('value', roomListener);
+
+  roomListener = roomRef.on('value', snapshot => {
+    const data = snapshot.val();
+    if (!data) return;
+
+    renderMemoryBoard(data);
+  });
+}
+
+function renderMemoryBoard(data) {
+  const board = document.getElementById('memory-board');
+  board.innerHTML = '';
+
+  document.getElementById('p1-score').textContent = data.p1Score || 0;
+  document.getElementById('p2-score').textContent = data.p2Score || 0;
+
+  const turnIndicator = document.getElementById('turn-indicator');
+  if (!data.p2Joined) {
+    turnIndicator.textContent = "ממתין לשחקן 2...";
+    turnIndicator.style.background = "#ffb86c";
+  } else if (data.currentTurn === myPlayerId) {
+    turnIndicator.textContent = "תורך לשחק! 🎯";
+    turnIndicator.style.background = "#50fa7b";
+  } else {
+    turnIndicator.textContent = "תור היריב... ⏳";
+    turnIndicator.style.background = "#ff5555";
+  }
+
+  data.deck.forEach(card => {
+    const cardEl = document.createElement('div');
+    cardEl.className = 'memory-card';
+    if (card.flipped) cardEl.classList.add('flipped');
+    if (card.matched) cardEl.classList.add('matched');
+
+    cardEl.textContent = card.flipped || card.matched ? card.icon : '❓';
+
+    cardEl.onclick = () => onCardClick(card, data);
+    board.appendChild(cardEl);
+  });
+}
+
+function onCardClick(card, data) {
+  if (isFlipping) return;
+  if (!data.p2Joined) { alert("המתן שהחבר יצטרף לחדר!"); return; }
+  if (data.currentTurn !== myPlayerId) return;
+  if (card.flipped || card.matched) return;
+
+  const flippedCards = data.flippedCards || [];
+  if (flippedCards.length >= 2) return;
+
+  const audio = new Audio(card.file);
+  audio.play().catch(() => {});
+
+  card.flipped = true;
+  flippedCards.push(card);
+  data.deck[card.id] = card;
+
+  roomRef.update({
+    deck: data.deck,
+    flippedCards: flippedCards
+  });
+
+  if (flippedCards.length === 2) {
+    isFlipping = true;
+    setTimeout(() => handleTurnCheck(data), 1200);
+  }
+}
+
+function handleTurnCheck(data) {
+  const [c1, c2] = data.flippedCards;
+  let nextTurn = data.currentTurn;
+  let p1Score = data.p1Score || 0;
+  let p2Score = data.p2Score || 0;
+
+  if (c1.soundId === c2.soundId) {
+    data.deck[c1.id].matched = true;
+    data.deck[c2.id].matched = true;
+
+    if (myPlayerId === 'p1') p1Score++;
+    else p2Score++;
+  } else {
+    data.deck[c1.id].flipped = false;
+    data.deck[c2.id].flipped = false;
+    nextTurn = data.currentTurn === 'p1' ? 'p2' : 'p1';
+  }
+
+  roomRef.update({
+    deck: data.deck,
+    flippedCards: [],
+    currentTurn: nextTurn,
+    p1Score: p1Score,
+    p2Score: p2Score
+  }).then(() => {
+    isFlipping = false;
+    checkGameWin(data.deck, p1Score, p2Score);
+  });
+}
+
+function checkGameWin(deck, p1Score, p2Score) {
+  const allMatched = deck.every(c => c.matched);
+  if (allMatched) {
+    let msg = p1Score === p2Score ? "תיקו!" : (p1Score > p2Score ? "שחקן 1 ניצח! 🎉" : "שחקן 2 ניצח! 🎉");
+    setTimeout(() => alert(`המשחק הסתיים! ${msg}`), 300);
+  }
+}
+
+function leaveMemoryGame() {
+  if (roomRef && roomListener) roomRef.off('value', roomListener);
+  showScreen('screen-main');
 }

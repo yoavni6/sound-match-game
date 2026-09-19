@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sound Master 💨🗣️</title>
   <link rel="stylesheet" href="style.css">
+  <!-- Firebase Libraries -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
   <div class="app-container">
@@ -12,7 +15,7 @@
     <!-- 1. מסך הבית -->
     <div id="screen-main" class="screen">
       <h1 class="logo">Sound Master 👑</h1>
-      <p class="subtitle">השלם את הקטלוגים או תפציץ בחידון הטריוויה!</p>
+      <p class="subtitle">השלם את הקטלוגים, שחק בטריוויה או אתגר חבר בזיכרון!</p>
 
       <div class="mode-cards">
         <button class="mode-card fart-theme" onclick="openCatalog('fart')">
@@ -28,7 +31,20 @@
         </button>
       </div>
 
-      <!-- פינת טריוויה חדשה -->
+      <!-- פינת משחק הזיכרון Online -->
+      <div class="trivia-section memory-section">
+        <h3>🧠 משחק הזיכרון Online (2 שחקנים)</h3>
+        <p>מצא את 8 הזוגות התואמים בלייב משני טלפונים!</p>
+        <div class="memory-lobby-btns">
+          <button class="trivia-launch-btn memory-launch-btn" onclick="createMemoryRoom()">🎮 צור חדר חדש</button>
+          <div class="join-box">
+            <input type="text" id="room-code-input" placeholder="קוד (4 ספרות)">
+            <button class="trivia-launch-btn join-btn" onclick="joinMemoryRoom()">הצטרף</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- פינת טריוויה -->
       <div class="trivia-section">
         <h3>🧠 חידון הטריוויה הגדול</h3>
         <p>15 שאלות, טיימר לוחץ וניקוד בסגנון Kahoot!</p>
@@ -39,7 +55,33 @@
       </div>
     </div>
 
-    <!-- 2. מסך קטלוג שלבים -->
+    <!-- 2. מסך משחק הזיכרון Online -->
+    <div id="screen-memory" class="screen hidden">
+      <div class="header-bar">
+        <button class="back-btn" onclick="leaveMemoryGame()">⬅️ יציאה</button>
+        <h2>זיכרון Online 🔊</h2>
+      </div>
+
+      <div class="room-info-bar">
+        <span>קוד חדר: <strong id="display-room-code">----</strong></span>
+        <span id="turn-indicator" class="turn-badge">ממתין לשחקן...</span>
+      </div>
+
+      <div class="multiplayer-scores">
+        <div class="p-score p1-box">
+          <span>שחקן 1</span>
+          <strong id="p1-score">0</strong>
+        </div>
+        <div class="p-score p2-box">
+          <span>שחקן 2</span>
+          <strong id="p2-score">0</strong>
+        </div>
+      </div>
+
+      <div id="memory-board" class="memory-grid-16"></div>
+    </div>
+
+    <!-- 3. מסך קטלוג שלבים -->
     <div id="screen-catalog" class="screen hidden">
       <div class="header-bar">
         <button class="back-btn" onclick="showScreen('screen-main')">⬅️ חזרה</button>
@@ -49,7 +91,7 @@
       <div id="levels-list" class="levels-grid"></div>
     </div>
 
-    <!-- 3. מסך אתגר (הקלטה וחיקוי) -->
+    <!-- 4. מסך אתגר (הקלטה וחיקוי) -->
     <div id="screen-challenge" class="screen hidden">
       <div class="header-bar">
         <button class="back-btn" onclick="showScreen('screen-catalog')">⬅️ לקטלוג</button>
@@ -72,7 +114,7 @@
       </div>
     </div>
 
-    <!-- 4. מסך משחק הטריוויה -->
+    <!-- 5. מסך משחק הטריוויה -->
     <div id="screen-trivia" class="screen hidden">
       <div class="trivia-header">
         <span id="quiz-progress">שאלה 1/15</span>
@@ -86,7 +128,7 @@
       </div>
     </div>
 
-    <!-- 5. מסך תוצאות טריוויה -->
+    <!-- 6. מסך תוצאות טריוויה -->
     <div id="screen-trivia-result" class="screen hidden">
       <div class="result-card">
         <h2>🎉 סיימת את החידון!</h2>

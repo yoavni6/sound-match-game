@@ -69,27 +69,6 @@ body {
 
 .mode-card .icon { font-size: 2.5rem; display: block; margin-bottom: 4px; }
 
-.trivia-box {
-  background: #2d3047;
-  border-radius: 12px;
-  padding: 14px;
-  margin-top: 10px;
-}
-
-.trivia-box h3 { color: #f1fa8c; font-size: 1rem; margin-bottom: 6px; }
-.trivia-box p { font-size: 0.85rem; color: #d0d0e0; min-height: 40px; }
-
-.trivia-btn {
-  margin-top: 8px;
-  background: transparent;
-  border: 1px solid #6272a4;
-  color: #8be9fd;
-  padding: 4px 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.8rem;
-}
-
 .header-bar {
   display: flex;
   align-items: center;
@@ -329,3 +308,111 @@ body {
 .option-btn:hover { background: #44475a; }
 .option-btn.correct { background: #50fa7b !important; color: #000 !important; }
 .option-btn.wrong { background: #ff5555 !important; color: #fff !important; }
+
+/* === עיצוב משחק זיכרון Online === */
+.memory-section {
+  background: #3b2d54;
+}
+
+.memory-launch-btn {
+  background: #ffb86c;
+  color: #1e1e2f;
+  width: 100%;
+}
+
+.memory-lobby-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.join-box {
+  display: flex;
+  gap: 8px;
+}
+
+.join-box input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #6272a4;
+  background: #1e1e2f;
+  color: #fff;
+  text-align: center;
+  font-size: 1rem;
+}
+
+.join-btn {
+  background: #50fa7b;
+  color: #000;
+  width: 90px;
+}
+
+.room-info-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #2d3047;
+  padding: 10px 14px;
+  border-radius: 10px;
+}
+
+.turn-badge {
+  background: #ffb86c;
+  color: #000;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: bold;
+  font-size: 0.85rem;
+}
+
+.multiplayer-scores {
+  display: flex;
+  gap: 10px;
+}
+
+.p-score {
+  flex: 1;
+  background: #2d3047;
+  padding: 8px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.p-score strong {
+  display: block;
+  font-size: 1.3rem;
+  color: #bd93f9;
+}
+
+.memory-grid-16 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.memory-card {
+  aspect-ratio: 1;
+  background: #383a59;
+  border: 2px solid #6272a4;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.memory-card.flipped {
+  background: #bd93f9;
+  border-color: #ff79c6;
+}
+
+.memory-card.matched {
+  background: #50fa7b;
+  border-color: #50fa7b;
+  cursor: default;
+  opacity: 0.7;
+}
